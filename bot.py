@@ -1,16 +1,12 @@
 import re
 import os
-import google.generativeai as genai
+from datetime import timedelta
 
 from telegram import Update
 from telegram.ext import Application, MessageHandler, ContextTypes, filters
+from telegram.constants import ChatPermissions
 
 TOKEN = os.getenv("BOT_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-genai.configure(api_key=GEMINI_API_KEY)
-
-modelo = genai.GenerativeModel("gemini-1.5-flash")
 
 PALABRAS_PROHIBIDAS = [
     "hp",
@@ -30,6 +26,9 @@ NOMBRES_PROHIBIDOS = [
     "valentino",
     "eidevin",
 ]
+
+advertencias = {}
+
 
 def normalizar(texto):
     texto = texto.lower()
@@ -52,62 +51,59 @@ def normalizar(texto):
 
     return texto
 
-async def mensaje_prohibido_por_ia(texto):
-    try:
-        prompt = f"""
-Analiza este mensaje de Telegram.
 
-Responde únicamente con SI o NO.
+async def advertir(update, usuario_id, nombre):
+    if usuario_id not in advertencias:
+        advertencias[usuario_id] = 0
 
-SI:
-- insultos graves
-- amenazas
-- acoso
-- spam evidente
-- lenguaje extremadamente ofensivo
+    advertencias[usuario_id] += 1
 
-NO:
-- conversación normal
-- bromas inofensivas
-- mensajes cotidianos
+    cantidad = advertencias[usuario_id]
 
-Mensaje:
-{texto}
-"""
+    if cantidad < 3:
+        await update.effective_chat.send_message(
+            f"⚠️ {nombre}, advertencia {cantidad}/3 por incumplir las reglas."
+        )
+    else:
+        await update.effective_chat.restrict_member(
+            usuario_id,
+            permissions=ChatPermissions(can_send_messages=False),
+            until_date=timedelta(minutes=10)
+        )
 
-        respuesta = modelo.generate_content(prompt)
+        advertencias[usuario_id] = 0
 
-        resultado = respuesta.text.strip().upper()
+        await update.effective_chat.send_message(
+            f"⛔ {nombre} ha sido silenciado durante 10 minutos por acumular 3 advertencias."
+        )
 
-        return resultado.startswith("SI")
-
-    except Exception as e:
-        print("Error Gemini:", e)
-        return False
 
 async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
 
-    texto_original = update.message.text
-    texto = normalizar(texto_original)
+    texto = normalizar(update.message.text)
+
+    usuario = update.effective_user
+    usuario_id = usuario.id
+    nombre = usuario.first_name
 
     for palabra in PALABRAS_PROHIBIDAS:
         if palabra in texto:
             await update.message.delete()
-            print("Eliminado por palabra prohibida:", texto_original)
+            await advertir(update, usuario_id, nombre)
             return
 
-    for nombre in NOMBRES_PROHIBIDOS:
-        if nombre in texto:
+    for nombre_prohibido in NOMBRES_PROHIBIDOS:
+        if nombre_prohibido in texto:
             await update.message.delete()
-            print("Eliminado por nombre prohibido:", texto_original)
+
+            await update.effective_chat.send_message(
+                "⚠️ No está permitido mencionar nombres protegidos."
+            )
+
             return
 
-    if await mensaje_prohibido_por_ia(texto_original):
-        await update.message.delete()
-        print("Eliminado por IA:", texto_original)
-        return
 
 app = Application.builder().token(TOKEN).build()
 
@@ -115,5 +111,5 @@ app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, moderar)
 )
 
-print("Team Blue Security IA iniciado...")
+print("Team Blue Security iniciado...")
 app.run_polling()
