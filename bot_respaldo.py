@@ -15,7 +15,7 @@ PALABRAS_PROHIBIDAS = [
     "perra",
     "perro",
     "infiel",
-    "platotipico",
+    "plato tipico",
 ]
 
 NOMBRES_PROHIBIDOS = [
@@ -34,15 +34,10 @@ def normalizar(texto):
         "3": "e",
         "4": "a",
         "5": "s",
-        "7": "t",
-        "@": "a",
-        "$": "s",
     }
 
     for viejo, nuevo in reemplazos.items():
         texto = texto.replace(viejo, nuevo)
-
-    texto = re.sub(r'[^a-záéíóúñ]', '', texto)
 
     return texto
 
