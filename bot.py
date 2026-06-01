@@ -2,9 +2,8 @@ import re
 import os
 from datetime import timedelta
 
-from telegram import Update
+from telegram import Update, ChatPermissions
 from telegram.ext import Application, MessageHandler, ContextTypes, filters
-from telegram.constants import ChatPermissions
 
 TOKEN = os.getenv("BOT_TOKEN")
 
@@ -47,7 +46,7 @@ def normalizar(texto):
     for viejo, nuevo in reemplazos.items():
         texto = texto.replace(viejo, nuevo)
 
-    texto = re.sub(r'[^a-záéíóúñ]', '', texto)
+    texto = re.sub(r"[^a-záéíóúñ]", "", texto)
 
     return texto
 
@@ -64,18 +63,25 @@ async def advertir(update, usuario_id, nombre):
         await update.effective_chat.send_message(
             f"⚠️ {nombre}, advertencia {cantidad}/3 por incumplir las reglas."
         )
+
     else:
-        await update.effective_chat.restrict_member(
-            usuario_id,
-            permissions=ChatPermissions(can_send_messages=False),
-            until_date=timedelta(minutes=10)
-        )
+        try:
+            await update.effective_chat.restrict_member(
+                usuario_id,
+                permissions=ChatPermissions(
+                    can_send_messages=False
+                ),
+                until_date=timedelta(minutes=10),
+            )
+
+            await update.effective_chat.send_message(
+                f"⛔ {nombre} ha sido silenciado durante 10 minutos por acumular 3 advertencias."
+            )
+
+        except Exception as e:
+            print(f"Error al silenciar usuario: {e}")
 
         advertencias[usuario_id] = 0
-
-        await update.effective_chat.send_message(
-            f"⛔ {nombre} ha sido silenciado durante 10 minutos por acumular 3 advertencias."
-        )
 
 
 async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
