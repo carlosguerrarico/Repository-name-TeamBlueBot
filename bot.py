@@ -16,14 +16,31 @@ PALABRAS_PROHIBIDAS = [
     "perra",
     "perro",
     "infiel",
+    "amante",
     "platotipico",
 ]
 
 NOMBRES_PROHIBIDOS = [
     "sheila",
     "beba",
+    "bba",
     "valentino",
     "eidevin",
+    "sofia",
+    "zorro",
+    "zorroviejo",
+    "melissa",
+    "melissagate",
+    "meli",
+    "alexa",
+    "alexatorrex",
+    "morada",
+    "yuli",
+    "yuliruiz",
+    "nicolas",
+    "nicolasarrieta",
+    "marilyn",
+    "marilynpatino",
 ]
 
 advertencias = {}
@@ -104,7 +121,6 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for nombre_prohibido in NOMBRES_PROHIBIDOS:
         if nombre_prohibido in texto:
             await update.message.delete()
-            await registrar_infraccion(update, usuario_id, nombre)
             return
 
 
