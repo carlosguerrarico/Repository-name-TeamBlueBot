@@ -88,12 +88,20 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     usuario_id = usuario.id
     nombre = usuario.first_name
 
+    # Ignorar administradores
+    miembro = await update.effective_chat.get_member(usuario_id)
+
+    if miembro.status in ["administrator", "creator"]:
+        return
+
+    # Revisar malas palabras
     for palabra in PALABRAS_PROHIBIDAS:
         if palabra in texto:
             await update.message.delete()
             await advertir(update, usuario_id, nombre)
             return
 
+    # Revisar nombres protegidos
     for nombre_prohibido in NOMBRES_PROHIBIDOS:
         if nombre_prohibido in texto:
             await update.message.delete()
