@@ -1,6 +1,6 @@
 import re
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from telegram import Update, ChatPermissions
 from telegram.ext import Application, MessageHandler, ContextTypes, filters
@@ -51,35 +51,28 @@ def normalizar(texto):
     return texto
 
 
-async def advertir(update, usuario_id, nombre):
+async def registrar_infraccion(update, usuario_id, nombre):
     if usuario_id not in advertencias:
         advertencias[usuario_id] = 0
 
     advertencias[usuario_id] += 1
 
-    cantidad = advertencias[usuario_id]
-
-    if cantidad < 3:
-        await update.effective_chat.send_message(
-            f"⚠️ {nombre}, advertencia {cantidad}/3 por incumplir las reglas."
-        )
-
-    else:
+    if advertencias[usuario_id] >= 5:
         try:
             await update.effective_chat.restrict_member(
                 usuario_id,
                 permissions=ChatPermissions(
                     can_send_messages=False
                 ),
-                until_date=timedelta(minutes=10),
+                until_date=datetime.utcnow() + timedelta(minutes=10)
             )
 
             await update.effective_chat.send_message(
-                f"⛔ {nombre} ha sido silenciado durante 10 minutos por acumular 3 advertencias."
+                f"⛔️ {nombre}, has incumplido las reglas del grupo."
             )
 
         except Exception as e:
-            print(f"Error al silenciar usuario: {e}")
+            print("Error al silenciar:", e)
 
         advertencias[usuario_id] = 0
 
@@ -88,34 +81,30 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.message or not update.message.text:
         return
 
-    texto = normalizar(update.message.text)
-
     usuario = update.effective_user
     usuario_id = usuario.id
     nombre = usuario.first_name
 
-    # Ignorar administradores
     miembro = await update.effective_chat.get_member(usuario_id)
 
+    # Ignorar administradores
     if miembro.status in ["administrator", "creator"]:
         return
+
+    texto = normalizar(update.message.text)
 
     # Revisar malas palabras
     for palabra in PALABRAS_PROHIBIDAS:
         if palabra in texto:
             await update.message.delete()
-            await advertir(update, usuario_id, nombre)
+            await registrar_infraccion(update, usuario_id, nombre)
             return
 
     # Revisar nombres protegidos
     for nombre_prohibido in NOMBRES_PROHIBIDOS:
         if nombre_prohibido in texto:
             await update.message.delete()
-
-            await update.effective_chat.send_message(
-                "⚠️ No está permitido mencionar nombres protegidos."
-            )
-
+            await registrar_infraccion(update, usuario_id, nombre)
             return
 
 
