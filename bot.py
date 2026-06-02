@@ -232,4 +232,10 @@ app.add_handler(
 )
 
 print("Team Blue Security iniciado...")
-app.run_polling()
+
+app.run_polling(
+    allowed_updates=[
+        "message",
+        "edited_message"
+    ]
+)
