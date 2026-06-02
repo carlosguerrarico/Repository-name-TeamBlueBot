@@ -145,14 +145,12 @@ async def procesar_contenido(update, contenido):
 
     texto = normalizar(contenido)
 
-    # Palabras prohibidas = cuentan infracción
     for palabra in PALABRAS_PROHIBIDAS:
         if palabra in texto:
             await update.message.delete()
             await registrar_infraccion(update, usuario_id, nombre)
             return
 
-    # Nombres protegidos = NO cuentan infracción
     for nombre_prohibido in NOMBRES_PROHIBIDOS:
         if nombre_prohibido in texto:
             await update.message.delete()
@@ -196,18 +194,21 @@ async def moderar_editado(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     texto = normalizar(contenido)
 
-    # Palabras prohibidas = cuentan infracción
     for palabra in PALABRAS_PROHIBIDAS:
         if palabra in texto:
             await update.edited_message.delete()
             await registrar_infraccion(update, usuario_id, nombre)
             return
 
-    # Nombres protegidos = NO cuentan infracción
     for nombre_prohibido in NOMBRES_PROHIBIDOS:
         if nombre_prohibido in texto:
             await update.edited_message.delete()
             return
+
+
+async def diagnostico(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("TIPO DE UPDATE RECIBIDO:")
+    print(update)
 
 
 app = Application.builder().token(TOKEN).build()
@@ -222,6 +223,14 @@ app.add_handler(
 
 app.add_handler(
     MessageHandler(~filters.COMMAND, moderar)
+)
+
+app.add_handler(
+    MessageHandler(
+        filters.ALL,
+        diagnostico
+    ),
+    group=999
 )
 
 app.add_handler(
