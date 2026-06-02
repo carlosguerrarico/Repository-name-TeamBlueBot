@@ -95,7 +95,7 @@ async def registrar_infraccion(update, usuario_id, nombre):
 
 
 async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message or not update.message.text:
+    if not update.message:	
         return
 
     usuario = update.effective_user
@@ -108,7 +108,12 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if miembro.status in ["administrator", "creator"]:
         return
 
-    texto = normalizar(update.message.text)
+    contenido = update.message.text or update.message.caption
+
+    if not contenido:
+        return
+
+    texto = normalizar(contenido)
 
     # Revisar malas palabras
     for palabra in PALABRAS_PROHIBIDAS:
