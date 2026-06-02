@@ -1,0 +1,12 @@
+[
+    "hp",
+    "hpta",
+    "gonorrea",
+    "mk",
+    "moza",
+    "perra",
+    "perro",
+    "infiel",
+    "amante",
+    "platotipico"
+]

@@ -1,5 +1,6 @@
 import re
 import os
+import json
 from datetime import datetime, timedelta
 
 from telegram import Update, ChatPermissions
@@ -14,41 +15,21 @@ from telegram.ext import (
 TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = 8698288233
 
-PALABRAS_PROHIBIDAS = [
-    "hp",
-    "hpta",
-    "gonorrea",
-    "mk",
-    "moza",
-    "perra",
-    "perro",
-    "infiel",
-    "amante",
-    "platotipico",
-]
+def cargar_json(archivo):
+    try:
+        with open(archivo, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return []
 
-NOMBRES_PROHIBIDOS = [
-    "sheila",
-    "beba",
-    "bba",
-    "valentino",
-    "eidevin",
-    "sofia",
-    "zorro",
-    "zorroviejo",
-    "melissa",
-    "melissagate",
-    "meli",
-    "alexa",
-    "alexatorrex",
-    "morada",
-    "yuli",
-    "yuliruiz",
-    "nicolas",
-    "nicolasarrieta",
-    "marilyn",
-    "marilynpatino",
-]
+
+def guardar_json(archivo, datos):
+    with open(archivo, "w", encoding="utf-8") as f:
+        json.dump(datos, f, ensure_ascii=False, indent=4)
+
+
+PALABRAS_PROHIBIDAS = cargar_json("palabras.json")
+NOMBRES_PROHIBIDOS = cargar_json("nombres.json")
 
 advertencias = {}
 
@@ -114,7 +95,6 @@ async def estadisticas(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Infracciones activas: {total}"
     )
 
-
 async def infracciones(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != OWNER_ID:
         return
@@ -129,6 +109,162 @@ async def infracciones(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     for usuario_id, cantidad in advertencias.items():
         texto += f"ID {usuario_id}: {cantidad}\n"
+
+    await update.message.reply_text(texto)
+
+
+async def agregarpalabra(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID:
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "Uso: /agregarpalabra palabra"
+        )
+        return
+
+    palabra = normalizar(" ".join(context.args))
+
+    if palabra in PALABRAS_PROHIBIDAS:
+        await update.message.reply_text(
+            "⚠️ Esa palabra ya existe."
+        )
+        return
+
+    PALABRAS_PROHIBIDAS.append(palabra)
+
+    guardar_json(
+        "palabras.json",
+        PALABRAS_PROHIBIDAS
+    )
+
+    await update.message.reply_text(
+        f"✅ Palabra agregada: {palabra}"
+    )
+
+
+async def eliminarpalabra(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID:
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "Uso: /eliminarpalabra palabra"
+        )
+        return
+
+    palabra = normalizar(" ".join(context.args))
+
+    if palabra not in PALABRAS_PROHIBIDAS:
+        await update.message.reply_text(
+            "⚠️ Esa palabra no existe."
+        )
+        return
+
+    PALABRAS_PROHIBIDAS.remove(palabra)
+
+    guardar_json(
+        "palabras.json",
+        PALABRAS_PROHIBIDAS
+    )
+
+    await update.message.reply_text(
+        f"✅ Palabra eliminada: {palabra}"
+    )
+
+
+async def agregarnombre(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID:
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "Uso: /agregarnombre nombre"
+        )
+        return
+
+    nombre = normalizar(" ".join(context.args))
+
+    if nombre in NOMBRES_PROHIBIDOS:
+        await update.message.reply_text(
+            "⚠️ Ese nombre ya existe."
+        )
+        return
+
+    NOMBRES_PROHIBIDOS.append(nombre)
+
+    guardar_json(
+        "nombres.json",
+        NOMBRES_PROHIBIDOS
+    )
+
+    await update.message.reply_text(
+        f"✅ Nombre protegido agregado: {nombre}"
+    )
+
+
+async def eliminarnombre(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID:
+        return
+
+    if not context.args:
+        await update.message.reply_text(
+            "Uso: /eliminarnombre nombre"
+        )
+        return
+
+    nombre = normalizar(" ".join(context.args))
+
+    if nombre not in NOMBRES_PROHIBIDOS:
+        await update.message.reply_text(
+            "⚠️ Ese nombre no existe."
+        )
+        return
+
+    NOMBRES_PROHIBIDOS.remove(nombre)
+
+    guardar_json(
+        "nombres.json",
+        NOMBRES_PROHIBIDOS
+    )
+
+    await update.message.reply_text(
+        f"✅ Nombre protegido eliminado: {nombre}"
+    )
+
+
+async def verpalabras(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID:
+        return
+
+    if not PALABRAS_PROHIBIDAS:
+        await update.message.reply_text(
+            "No hay palabras registradas."
+        )
+        return
+
+    texto = "📋 Palabras prohibidas:\n\n"
+
+    for palabra in PALABRAS_PROHIBIDAS:
+        texto += f"• {palabra}\n"
+
+    await update.message.reply_text(texto)
+
+
+async def vernombres(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != OWNER_ID:
+        return
+
+    if not NOMBRES_PROHIBIDOS:
+        await update.message.reply_text(
+            "No hay nombres registrados."
+        )
+        return
+
+    texto = "📋 Nombres protegidos:\n\n"
+
+    for nombre in NOMBRES_PROHIBIDOS:
+        texto += f"• {nombre}\n"
 
     await update.message.reply_text(texto)
 
@@ -179,6 +315,49 @@ app.add_handler(
 app.add_handler(
     CommandHandler("infracciones", infracciones)
 )
+
+app.add_handler(
+    CommandHandler(
+        "agregarpalabra",
+        agregarpalabra
+    )
+)
+
+app.add_handler(
+    CommandHandler(
+        "eliminarpalabra",
+        eliminarpalabra
+    )
+)
+
+app.add_handler(
+    CommandHandler(
+        "agregarnombre",
+        agregarnombre
+    )
+)
+
+app.add_handler(
+    CommandHandler(
+        "eliminarnombre",
+        eliminarnombre
+    )
+)
+
+app.add_handler(
+    CommandHandler(
+        "verpalabras",
+        verpalabras
+    )
+)
+
+app.add_handler(
+    CommandHandler(
+        "vernombres",
+        vernombres
+    )
+)
+
 
 app.add_handler(
     MessageHandler(
