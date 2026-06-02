@@ -145,14 +145,12 @@ async def procesar_contenido(update, contenido):
 
     texto = normalizar(contenido)
 
-    # Palabras prohibidas = cuentan infracción
     for palabra in PALABRAS_PROHIBIDAS:
         if palabra in texto:
             await update.message.delete()
             await registrar_infraccion(update, usuario_id, nombre)
             return
 
-    # Nombres protegidos = NO cuentan infracción
     for nombre_prohibido in NOMBRES_PROHIBIDOS:
         if nombre_prohibido in texto:
             await update.message.delete()
@@ -171,43 +169,6 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await procesar_contenido(update, contenido)
 
 
-async def moderar_editado(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.edited_message:
-        return
-
-    contenido = (
-        update.edited_message.text
-        or update.edited_message.caption
-    )
-
-    if not contenido:
-        return
-
-    usuario = update.edited_message.from_user
-    usuario_id = usuario.id
-    nombre = usuario.first_name
-
-    miembro = await update.effective_chat.get_member(usuario_id)
-
-    if miembro.status in ["administrator", "creator"]:
-        return
-
-    texto = normalizar(contenido)
-
-    # Palabras prohibidas = cuentan infracción
-    for palabra in PALABRAS_PROHIBIDAS:
-        if palabra in texto:
-            await update.edited_message.delete()
-            await registrar_infraccion(update, usuario_id, nombre)
-            return
-
-    # Nombres protegidos = NO cuentan infracción
-    for nombre_prohibido in NOMBRES_PROHIBIDOS:
-        if nombre_prohibido in texto:
-            await update.edited_message.delete()
-            return
-
-
 app = Application.builder().token(TOKEN).build()
 
 app.add_handler(
@@ -220,13 +181,6 @@ app.add_handler(
 
 app.add_handler(
     MessageHandler(~filters.COMMAND, moderar)
-)
-
-app.add_handler(
-    MessageHandler(
-        filters.UpdateType.EDITED_MESSAGE,
-        moderar_editado
-    )
 )
 
 print("Team Blue Security iniciado...")
