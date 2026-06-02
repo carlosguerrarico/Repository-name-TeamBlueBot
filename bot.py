@@ -72,7 +72,10 @@ async def registrar_infraccion(update, usuario_id, nombre):
     if usuario_id not in advertencias:
         advertencias[usuario_id] = 0
 
-    advertencias[usuario_id] += 1
+    if advertencias[usuario_id] == 4:
+    await update.effective_chat.send_message(
+        f"⚠️ {nombre}, te queda 1 infracción antes del silencio."
+    )
 
     if advertencias[usuario_id] >= 5:
         try:
