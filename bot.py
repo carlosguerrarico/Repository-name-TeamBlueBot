@@ -95,8 +95,10 @@ async def registrar_infraccion(update, usuario_id, nombre):
 
 
 async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message:	
+    if not update.message:
         return
+
+    print("MENSAJE RECIBIDO:", update.message)
 
     usuario = update.effective_user
     usuario_id = usuario.id
