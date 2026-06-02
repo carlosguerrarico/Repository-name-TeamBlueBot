@@ -132,7 +132,7 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 app = Application.builder().token(TOKEN).build()
 
 app.add_handler(
-    MessageHandler(filters.TEXT & ~filters.COMMAND, moderar)
+    MessageHandler(~filters.COMMAND, moderar)
 )
 
 print("Team Blue Security iniciado...")
