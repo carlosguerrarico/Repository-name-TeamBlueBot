@@ -172,6 +172,8 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def moderar_editado(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("MENSAJE EDITADO DETECTADO")
+
     if not update.edited_message:
         return
 
