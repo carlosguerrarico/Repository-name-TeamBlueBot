@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 
-TOKEN = "8875210138:AAHpGfeh-smVIsYOtspt4TOm5hkpq_2qYiM"
+TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = 8698288233
 
 def cargar_json(archivo):
