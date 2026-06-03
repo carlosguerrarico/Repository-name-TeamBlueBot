@@ -12,7 +12,7 @@ from telegram.ext import (
     filters,
 )
 
-TOKEN = os.getenv("BOT_TOKEN")
+TOKEN = "8875210138:AAHpGfeh-smVIsYOtspt4TOm5hkpq_2qYiM"
 OWNER_ID = 8698288233
 
 def cargar_json(archivo):
@@ -55,6 +55,28 @@ def normalizar(texto):
 
     return texto
 
+async def avisar_owner(
+    update,
+    usuario_id,
+    nombre_usuario,
+    texto_original,
+    tipo
+):
+    try:
+        await update.get_bot().send_message(
+            chat_id=OWNER_ID,
+            text=(
+                f"{tipo}\n\n"
+                f"Usuario: {nombre_usuario}\n"
+                f"ID: {usuario_id}\n"
+                f"Grupo: {update.effective_chat.title}\n\n"
+                f"Mensaje:\n"
+                f"{texto_original}"
+            )
+        )
+    except Exception as e:
+        print("Error enviando aviso:", e)
+
 
 async def registrar_infraccion(update, usuario_id, nombre):
     if usuario_id not in advertencias:
@@ -75,6 +97,21 @@ async def registrar_infraccion(update, usuario_id, nombre):
             await update.effective_chat.send_message(
                 f"⛔️ {nombre}, has incumplido las reglas del grupo."
             )
+
+            try:
+                await update.get_bot().send_message(
+                    chat_id=OWNER_ID,
+                    text=(
+                        f"🚫 USUARIO SILENCIADO\n\n"
+                        f"Usuario: {nombre}\n"
+                        f"ID: {usuario_id}\n"
+                        f"Grupo: {update.effective_chat.title}\n\n"
+                        f"Motivo: 5 infracciones."
+                    )
+                )
+            except Exception as e:
+                print("Error enviando aviso:", e)
+
 
         except Exception as e:
             print("Error al silenciar:", e)
@@ -295,14 +332,39 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # Palabras prohibidas = cuentan infracción
     for palabra in PALABRAS_PROHIBIDAS:
         if palabra in texto:
+
+            await avisar_owner(
+                update,
+                usuario_id,
+                nombre,
+                contenido,
+                "🚨 PALABRA PROHIBIDA DETECTADA"
+            )
+
             await mensaje.delete()
-            await registrar_infraccion(update, usuario_id, nombre)
+
+            await registrar_infraccion(
+                update,
+                usuario_id,
+                nombre
+            )
+
             return
 
     # Nombres protegidos = NO cuentan infracción
     for nombre_prohibido in NOMBRES_PROHIBIDOS:
         if nombre_prohibido in texto:
+
+            await avisar_owner(
+                update,
+                usuario_id,
+                nombre,
+                contenido,
+                "👤 NOMBRE PROTEGIDO DETECTADO"
+            )
+
             await mensaje.delete()
+
             return
 
 
