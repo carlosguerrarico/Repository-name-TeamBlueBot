@@ -329,6 +329,12 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     texto = normalizar(contenido)
 
+    # Ignorar mensajes que solo contienen enlaces
+
+    if re.match(r"^https?://", contenido.strip()):
+        return
+
+
     # Palabras prohibidas = cuentan infracción
     for palabra in PALABRAS_PROHIBIDAS:
         if palabra in texto:
