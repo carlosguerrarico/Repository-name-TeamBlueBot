@@ -51,7 +51,7 @@ def normalizar(texto):
     for viejo, nuevo in reemplazos.items():
         texto = texto.replace(viejo, nuevo)
 
-    texto = re.sub(r"[^a-záéíóúñ]", "", texto)
+    texto = re.sub(r"[^a-záéíóúñ\s]", "", texto)
 
     return texto
 
@@ -333,6 +333,8 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     for palabra in PALABRAS_PROHIBIDAS:
         if palabra in texto:
 
+            print("PALABRA DETECTADA:", palabra)
+
             await avisar_owner(
                 update,
                 usuario_id,
@@ -352,8 +354,12 @@ async def moderar(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
     # Nombres protegidos = NO cuentan infracción
+
     for nombre_prohibido in NOMBRES_PROHIBIDOS:
-        if nombre_prohibido in texto:
+
+        patron = rf"\b{re.escape(nombre_prohibido)}[a-z]*\b"
+
+        if re.search(patron, texto):
 
             await avisar_owner(
                 update,
